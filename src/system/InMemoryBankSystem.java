@@ -1,8 +1,5 @@
 package system;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import model.BankAccount;
 import model.WithdrawalResult;
 
@@ -11,15 +8,15 @@ public class InMemoryBankSystem implements BankSystem {
     private static final int AMOUNT_STEP = 50;
     private static final double FEE_RATE = 0.01;
 
-    private final Map<String, BankAccount> accountByCard = new HashMap<>();
+    private final EncryptedAccountDatabase accountDatabase = new EncryptedAccountDatabase();
 
     public InMemoryBankSystem() {
-        accountByCard.put("622202001", new BankAccount("A1001", "622202001", "123456", 12000));
+        // Accounts are loaded from encrypted local database file.
     }
 
     @Override
     public boolean authenticateCard(String cardNumber, String pin) {
-        BankAccount account = accountByCard.get(cardNumber);
+        BankAccount account = accountDatabase.findByCard(cardNumber);
         if (account == null || account.isLocked()) {
             return false;
         }
@@ -28,21 +25,22 @@ public class InMemoryBankSystem implements BankSystem {
 
     @Override
     public boolean isCardLocked(String cardNumber) {
-        BankAccount account = accountByCard.get(cardNumber);
+        BankAccount account = accountDatabase.findByCard(cardNumber);
         return account != null && account.isLocked();
     }
 
     @Override
     public void lockCard(String cardNumber) {
-        BankAccount account = accountByCard.get(cardNumber);
+        BankAccount account = accountDatabase.findByCard(cardNumber);
         if (account != null) {
             account.lock();
+            accountDatabase.upsert(account);
         }
     }
 
     @Override
     public WithdrawalResult withdraw(String cardNumber, double amount) {
-        BankAccount account = accountByCard.get(cardNumber);
+        BankAccount account = accountDatabase.findByCard(cardNumber);
         if (account == null) {
             return WithdrawalResult.fail("银行卡不存在");
         }
@@ -66,6 +64,7 @@ public class InMemoryBankSystem implements BankSystem {
         }
 
         account.debit(totalDebit);
+        accountDatabase.upsert(account);
         return WithdrawalResult.ok(amount, fee, account.getBalance());
     }
 }

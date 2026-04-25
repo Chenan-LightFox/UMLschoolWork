@@ -1,18 +1,28 @@
 package model;
 
+import system.CryptoUtils;
+
 public class BankAccount {
     private final String accountId;
     private final String cardNumber;
-    private final String pin;
+    private final String pinHash;
+    private final String pinSalt;
     private double balance;
     private boolean locked;
 
-    public BankAccount(String accountId, String cardNumber, String pin, double balance) {
+    public BankAccount(String accountId, String cardNumber, String pinHash, String pinSalt, double balance, boolean locked) {
         this.accountId = accountId;
         this.cardNumber = cardNumber;
-        this.pin = pin;
+        this.pinHash = pinHash;
+        this.pinSalt = pinSalt;
         this.balance = balance;
-        this.locked = false;
+        this.locked = locked;
+    }
+
+    public static BankAccount createWithPlainPin(String accountId, String cardNumber, String plainPin, double balance) {
+        String salt = CryptoUtils.newSaltBase64();
+        String hash = CryptoUtils.hashPinBase64(plainPin, salt);
+        return new BankAccount(accountId, cardNumber, hash, salt, balance, false);
     }
 
     public String getAccountId() {
@@ -21,6 +31,14 @@ public class BankAccount {
 
     public String getCardNumber() {
         return cardNumber;
+    }
+
+    public String getPinHash() {
+        return pinHash;
+    }
+
+    public String getPinSalt() {
+        return pinSalt;
     }
 
     public boolean isLocked() {
@@ -32,7 +50,7 @@ public class BankAccount {
     }
 
     public boolean verifyPin(String inputPin) {
-        return pin.equals(inputPin);
+        return CryptoUtils.verifyPin(inputPin, pinSalt, pinHash);
     }
 
     public double getBalance() {
