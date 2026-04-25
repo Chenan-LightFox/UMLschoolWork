@@ -15,6 +15,11 @@ public class InMemoryBankSystem implements BankSystem {
     }
 
     @Override
+    public boolean cardExists(String cardNumber) {
+        return accountDatabase.findByCard(cardNumber) != null;
+    }
+
+    @Override
     public boolean authenticateCard(String cardNumber, String pin) {
         BankAccount account = accountDatabase.findByCard(cardNumber);
         if (account == null || account.isLocked()) {

@@ -1,7 +1,6 @@
 package device;
 
 import java.util.Scanner;
-
 import model.WithdrawalResult;
 import system.BankSystem;
 
@@ -19,40 +18,60 @@ public class ATM {
     }
 
     public void startWithdrawalFlow(Scanner scanner) {
-        System.out.println("欢迎使用ATM，请插入银行卡(输入卡号):");
-        String cardNumber = scanner.nextLine().trim();
+        String cardNumber;
+        while (true) {
+            System.out.println("欢迎使用ATM，请插入银行卡(输入卡号):");
+            cardNumber = scanner.nextLine().trim();
 
-        if (bankSystem.isCardLocked(cardNumber)) {
-            System.out.println("该卡已被锁定，请联系银行柜台。");
-            return;
-        }
-
-        boolean authPassed = false;
-        for (int i = 1; i <= MAX_PIN_TRIES; i++) {
-            System.out.println("请输入密码:");
-            String pin = scanner.nextLine().trim();
-
-            if (bankSystem.authenticateCard(cardNumber, pin)) {
-                authPassed = true;
-                break;
+            if (!bankSystem.cardExists(cardNumber)) {
+                System.out.println("卡号不存在，请重新输入。");
+                continue;
             }
 
-            int remaining = MAX_PIN_TRIES - i;
-            if (remaining > 0) {
-                System.out.println("密码错误，请重试。剩余次数: " + remaining);
+            if (bankSystem.isCardLocked(cardNumber)) {
+                System.out.println("该卡已被锁定，请联系银行柜台。");
+                return;
             }
-        }
 
-        if (!authPassed) {
-            bankSystem.lockCard(cardNumber);
-            System.out.println("密码错误已达3次，系统吞卡。交易结束。");
-            return;
+            boolean backToCardPage = false;
+            boolean authPassed = false;
+            for (int i = 1; i <= MAX_PIN_TRIES; i++) {
+                System.out.println("请输入密码(输入r返回上一步):");
+                String pin = scanner.nextLine().trim();
+
+                if ("r".equalsIgnoreCase(pin)) {
+                    backToCardPage = true;
+                    break;
+                }
+
+                if (bankSystem.authenticateCard(cardNumber, pin)) {
+                    authPassed = true;
+                    break;
+                }
+
+                int remaining = MAX_PIN_TRIES - i;
+                if (remaining > 0) {
+                    System.out.println("密码错误，请重试。剩余次数: " + remaining);
+                }
+            }
+
+            if (backToCardPage) {
+                System.out.println("已返回卡号输入页面。");
+                continue;
+            }
+
+            if (!authPassed) {
+                bankSystem.lockCard(cardNumber);
+                System.out.println("密码错误已达3次，系统吞卡。交易结束。");
+                return;
+            }
+            break;
         }
 
         System.out.println("认证成功。请选择功能: 1.取款");
         String menu = scanner.nextLine().trim();
         if (!"1".equals(menu)) {
-            System.out.println("仅实现了第九周作业范围: 取款功能。已退卡。");
+            System.out.println("目前仅实现了取款功能。已退卡。");
             return;
         }
 
