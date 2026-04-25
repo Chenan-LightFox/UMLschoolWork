@@ -10,34 +10,34 @@ public class ATM {
     private final BankSystem bankSystem;
     private final CashDispenser cashDispenser;
     private final ReceiptPrinter receiptPrinter;
+    private final Display display;
 
-    public ATM(BankSystem bankSystem, CashDispenser cashDispenser, ReceiptPrinter receiptPrinter) {
+    public ATM(BankSystem bankSystem, CashDispenser cashDispenser, ReceiptPrinter receiptPrinter, Display display) {
         this.bankSystem = bankSystem;
         this.cashDispenser = cashDispenser;
         this.receiptPrinter = receiptPrinter;
+        this.display = display;
     }
 
     public void startWithdrawalFlow(Scanner scanner) {
         String cardNumber;
         while (true) {
-            System.out.println("欢迎使用ATM，请插入银行卡(输入卡号):");
-            cardNumber = scanner.nextLine().trim();
+            cardNumber = display.readCardNumber(scanner);
 
             if (!bankSystem.cardExists(cardNumber)) {
-                System.out.println("卡号不存在，请重新输入。");
+                display.showCardNotFound();
                 continue;
             }
 
             if (bankSystem.isCardLocked(cardNumber)) {
-                System.out.println("该卡已被锁定，请联系银行柜台。");
+                display.showCardLocked();
                 return;
             }
 
             boolean backToCardPage = false;
             boolean authPassed = false;
             for (int i = 1; i <= MAX_PIN_TRIES; i++) {
-                System.out.println("请输入密码(输入r返回上一步):");
-                String pin = scanner.nextLine().trim();
+                String pin = display.readPin(scanner);
 
                 if ("r".equalsIgnoreCase(pin)) {
                     backToCardPage = true;
@@ -51,53 +51,49 @@ public class ATM {
 
                 int remaining = MAX_PIN_TRIES - i;
                 if (remaining > 0) {
-                    System.out.println("密码错误，请重试。剩余次数: " + remaining);
+                    display.showPinRetry(remaining);
                 }
             }
 
             if (backToCardPage) {
-                System.out.println("已返回卡号输入页面。");
+                display.showBackToCardPage();
                 continue;
             }
 
             if (!authPassed) {
                 bankSystem.lockCard(cardNumber);
-                System.out.println("密码错误已达3次，系统吞卡。交易结束。");
+                display.showCardCaptured();
                 return;
             }
             break;
         }
 
-        System.out.println("认证成功。请选择功能: 1.取款");
-        String menu = scanner.nextLine().trim();
+        String menu = display.readMenu(scanner);
         if (!"1".equals(menu)) {
-            System.out.println("目前仅实现了取款功能。已退卡。");
+            display.showOnlyWithdrawalSupported();
             return;
         }
 
-        System.out.println("请输入取款金额:");
-        String amountText = scanner.nextLine().trim();
+        String amountText = display.readAmountText(scanner);
         double amount;
         try {
             amount = Double.parseDouble(amountText);
         } catch (NumberFormatException ex) {
-            System.out.println("金额格式非法，交易结束。");
+            display.showInvalidAmountFormat();
             return;
         }
 
         WithdrawalResult result = bankSystem.withdraw(cardNumber, amount);
         if (!result.isSuccess()) {
-            System.out.println("取款失败: " + result.getMessage());
-            System.out.println("已退卡。");
+            display.showWithdrawFailure(result.getMessage());
             return;
         }
 
         cashDispenser.dispense(result.getAmount());
-        System.out.println("是否打印凭条? (Y/N)");
-        String printChoice = scanner.nextLine().trim();
+        String printChoice = display.readReceiptChoice(scanner);
         if ("Y".equalsIgnoreCase(printChoice)) {
             receiptPrinter.print(result);
         }
-        System.out.println("请取卡，欢迎下次使用。");
+        display.showFarewell();
     }
 }
