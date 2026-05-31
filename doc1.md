@@ -523,40 +523,7 @@ PrintingReceipt → finish → EjectingCard
 EjectingCard → cardRemoved → Idle
 ```
 
-#### 8.2 模型完善
-
-// TODO：
-Domain Model完善
-
-新增：
-
-Display模块
-状态属性
-模块关联关系
-
-删除：
-
-加密实现细节
-数据库存储细节
-工具类实现细节
-SSD完善
-
-增加：
-
-Display输出流程
-异常业务流程
-错误提示流程
-Contracts完善
-
-增加：
-
-状态变化
-Display状态变化
-异常后置条件
-
-///////
-
-#### 8.3 系统分析总结
+#### 8.2 系统分析总结
 
 本实验采用UP统一过程开发方法，对ATM系统进行了逐步分析与设计。
 
