@@ -491,7 +491,7 @@
 ### 八、细化迭代三
 
 #### 8.1 状态机图（State Machine Diagram）
-
+![alt text](status_machine.png)
 ##### 8.1.1 ATM状态说明
 |状态|说明|
 |---|---|
